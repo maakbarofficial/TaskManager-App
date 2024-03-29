@@ -1,16 +1,18 @@
 import React, { useState } from "react";
+import { useCookies } from "react-cookie";
 
-const Modal = ({ mode, setShowModal, task }) => {
+const Modal = ({ mode, setShowModal, getData, task }) => {
+  const [cookies, setCookie, removeCookie] = useCookies(null);
   const editMode = mode === "edit" ? true : false;
 
   const [data, setData] = useState({
-    user_email: editMode ? task.user_email : "ali@test.com",
+    user_email: editMode ? task.user_email : cookies.Email,
     title: editMode ? task.title : null,
     progress: editMode ? task.progress : 50,
-    date: editMode ? "" : new Date(),
+    date: editMode ? task.date : new Date(),
   });
 
-  const postData = async () => {
+  const postData = async (e) => {
     e.preventDefault();
     try {
       const response = await fetch("http://localhost:8000/todos", {
@@ -20,9 +22,37 @@ const Modal = ({ mode, setShowModal, task }) => {
         },
         body: JSON.stringify(data),
       });
+
+      if (response.status === 200) {
+        setShowModal(false);
+        getData();
+      }
+
       console.log(response);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const editData = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`http://localhost:8000/todos/${task.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.status === 200) {
+        setShowModal(false);
+        getData();
+      }
+
+      console.log(response);
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -70,7 +100,7 @@ const Modal = ({ mode, setShowModal, task }) => {
           <input
             className={mode}
             type="submit"
-            onClick={editMode ? "" : postData}
+            onClick={editMode ? editData : postData}
           />
         </form>
       </div>
